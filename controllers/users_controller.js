@@ -1,10 +1,27 @@
 const User = require('../models/user');
 
-module.exports.profile = function(req, res){
-    return res.render('user_profile', {
-        title: "User Profile"
-    })
+// User Details Display on Profile Page
+module.exports.profile = async function(req, res){
+
+    try {
+        if(req.cookies.user_id){
+            const user = await User.findById(req.cookies.user_id);
+            if(user){
+                return res.render('user_profile', {
+                    title: "User Profile",
+                    user: user
+                });
+            }
+            return res.redirect('/users/sign-in');
+        } else {
+            return res.redirect('/users/sign-in');
+        }
+    } catch(err) {
+        console.log('Error in finding user by ID:', err);
+        return res.redirect('/users/sign-in');
+    }
 }
+
 
 // Render the Sign Up Page
 module.exports.signUp = function(req, res) {
@@ -21,8 +38,7 @@ module.exports.signIn = function(req, res) {
     })
 }
 
-// Render the Sign In Page
-
+// Get the Sign Up Data
 module.exports.create = function(req, res){
     if(req.body.password != req.body.confirm_password){
         return res.redirect('back');
@@ -47,28 +63,34 @@ module.exports.create = function(req, res){
 }
 
 
-
-
 // Sign In and Create a session for the User
-module.exports.createSession = function(req, res){
-    // TODO later
+module.exports.createSession = async function(req, res){
+
+    try {
+        // Find the User
+        const user = await User.findOne({email: req.body.email});
+
+        // Handle User found
+        if(user){
+            // Handle Password which doesn't match
+            if(user.password != req.body.password){
+                return res.redirect('back');
+            }
+
+            // Handle session creation
+            res.cookie('user_id', user.id);
+            return res.redirect('/users/profile');
+        } else {
+            // Handle User not found
+            return res.redirect('back');
+        }
+    }
+    catch(err) {
+        console.log('error in finding User in Signing in', err);
+        return res.redirect('back');
+    }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-// Sign In and Create a session for the User
-module.exports.createSession = function(req, res){
-    // TODO later
-}
 
 
 
